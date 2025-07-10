@@ -41,13 +41,14 @@
             margin-right: 1%;
             width: 25%; /* Adjust based on your design and content */
             display: flex;
+            /* display: none; flex;*/
             flex-direction: column; /* stack the children vertically */
         }
 
         #verticalbar {
             margin-left: 1%;
             margin-right: 1%;
-            width: 60%; /* Adjust based on your design and content */
+            width: 100%; /* Adjust based on your design and content */
             display: flex;
             flex-direction: column; /* stack the children vertically */
         }
@@ -57,7 +58,7 @@
             margin-left: 1%;
             margin-right: 1%;
             width: 15%; /* Adjust based on your design and content */
-            display: flex;
+            display: none; /* flex;*/
             flex-direction: column; /* stack the children vertically */
         }
 
@@ -171,6 +172,10 @@
         
         input[type="number"] {
             width: 100px;  /* Set the width of all input elements of type number */
+        }
+
+        #TimeSeriesBar, #SimulationBar {
+            display: none;
         }
 
 
@@ -1400,7 +1405,7 @@
 
 
             <div class="window-header">
-                <span><center>  Simulation Window  </center></span>
+                <span><center>  Simulation Window - IHCantabria  </center></span>
                 <button class="minimize-button">-</button>
             </div>            
             <div class="window-content">
@@ -1409,7 +1414,7 @@
             </div>
 
 
-            <div class="window-header">
+            <div id="TimeSeriesBar" class="window-header">
                 <span><center>  Time Series Plots  </center></span>
                 <button class="minimize-button">-</button>
             </div>
@@ -1418,7 +1423,7 @@
             </div>
             
 
-            <div class="window-header">
+            <div id="SimulationBar" class="window-header">
                 <span><center>  Simulation Parameters  </center></span>
                 <button class="minimize-button">-</button>
             </div>

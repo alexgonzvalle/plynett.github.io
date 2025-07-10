@@ -106,7 +106,7 @@ function copyWaveDataToTexture(calc_constants, waveData, device, txWaves) {
         paddedFlatData[paddedIndex] = waveData[x][0] // red
         paddedFlatData[paddedIndex + 1] = waveData[x][1];  // green
         paddedFlatData[paddedIndex + 2] = waveData[x][2];  // blue
-        paddedFlatData[paddedIndex + 3] = waveData[x][3];  // alpha 
+        paddedFlatData[paddedIndex + 3] = waveData[x][3];  // alpha
     }
 
     const buffer = device.createBuffer({
