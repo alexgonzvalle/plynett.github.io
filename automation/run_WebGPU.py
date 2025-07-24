@@ -2,6 +2,7 @@ import os
 import json
 import time
 import glob
+import numpy as np
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -10,26 +11,28 @@ current_dir = os.path.abspath(os.path.dirname(__file__))
 
 # Set automation parameters for the simulation
 sim_directory = current_dir  # Directory where the simulation files are located
-config_file = "config.json" # Configuration file for the simulation
+config_file = "config_satellite.json" # Configuration file for the simulation
 bathy_file = "bathy.txt"  # Bathymetry file for the simulation
 use_wave_file = 1  # Flag to indicate whether to use a wave file (1 = yes, 0 = no)
 wave_file = "waves.txt"  # Wave file for the simulation (optional)
+use_sl_file = 1  # Flag to indicate whether to use a sea level file (1 = yes, 0 = no)
+sea_level_file = "sea_level.txt"  # Sea level file for the simulation (optional)
 use_friction_file = 0  # Flag to indicate whether to use a 2D friction map file (1 = yes, 0 = no)
 friction_file = "friction.txt"  # Wave file for the simulation (optional)
-use_sat_image = 0  # Flag to indicate whether to use a satellite image (1 = yes, 0 = no)
-sat_image_file = "overlay.jpg"  # Satellite image file for the simulation (optional)
+use_sat_image = 1  # Flag to indicate whether to use a satellite image (1 = yes, 0 = no)
+sat_image_file = "overlay.png"  # Satellite image file for the simulation (optional)
 output_folder = os.path.join(sim_directory, "output/") # Path to directory where the simulation will save its output files
 chromedriver_path = os.path.join(current_dir, "chromedriver-win64/chromedriver.exe")  # Path to the chromedriver executable is located
-run_headless = 0  # Flag to indicate whether to run the browser in headless (no browser window) mode (1 = yes, 0 = no)
+run_headless = 1  # Flag to indicate whether to run the browser in headless (no browser window) mode (1 = yes, 0 = no)
 
 # Save trigger parameters for automatically saving data, these will be added to json
-trigger_animation = 1  # automation trigger for animated gif when = 1
-trigger_animation_start_time = 100.0  # start time of animation trigger
+trigger_animation = 0  # automation trigger for animated gif when = 1
+trigger_animation_start_time = 0  # start time of animation trigger
 AnimGif_dt = 0.25  # time between animated gif frames, will write 80 frames
 
-trigger_writesurface = 1  # automation trigger for writing 2D surfaces when = 1
-trigger_writesurface_start_time = 120.0  # start time of surface write trigger
-trigger_writesurface_end_time = 122.0  # end time of surface write trigger
+trigger_writesurface = 0  # automation trigger for writing 2D surfaces when = 1
+trigger_writesurface_start_time = 0  # start time of surface write trigger
+trigger_writesurface_end_time = 3600  # end time of surface write trigger
 dt_writesurface = 1.0  # increment to write to file
 write_eta = 1  # flag for writing eta surface data to file, write when = 1
 write_u = 0  # flag for writing x velocity surface data to file, write when = 1
@@ -39,20 +42,35 @@ write_Q = 0  # flag for writing y flux surface data to file, write when = 1
 write_turb = 0  # flag for writing eddy visc surface data to file, write when = 1
 
 trigger_writeWaveHeight = 1  # automation trigger for writing mean/max/wave height surfaces when = 1
-trigger_resetMeans_time = 60.0  # time to reset means
-trigger_resetWaveHeight_time = 120.0  # time to reset wave height
-trigger_writeWaveHeight_time = 180.0  # time to write wave height, this is also the end time for the simulation
+trigger_resetMeans_time = 0.0  # time to reset means
+trigger_resetWaveHeight_time = 0.0  # time to reset wave height
+trigger_writeWaveHeight_time = 3600.0  # time to write wave height, this is also the end time for the simulation
 # Note: The simulation will never close if trigger_writeWaveHeight~=1
 # End Inputs - should not need to edit below this
 
+# Use sensors
+use_output_sensors = 0  # Flag to indicate whether to use output sensors (1 = yes, 0 = no)
+data_sensors = [(0, 0)] * 16
+new_params_sensors = {}
+if use_output_sensors:
+    num_sensors = 2
+    data_sensors[1] = (1751.82, 2191)
+    data_sensors[2] = (2500.82, 2191)
+    new_params_sensors = {
+        "maxdurationTimeSeries": trigger_writeWaveHeight_time,
+        "NumberOfTimeSeries": num_sensors,
+        "locationOfTimeSeries": [{"xts": xts, "yts": yts} for xts, yts in data_sensors]
+    }
+
 render_step = 1  # render step for the simulation, default is 1
-if run_headless == 1:
-    render_step = 100  # since we dont care about the rendering in headless mode, set it to large value to max GPU
+# if run_headless == 1:
+#     render_step = 100  # since we dont care about the rendering in headless mode, set it to large value to max GPU
 
 # Define file paths relative to the script directory
 config_file_path = os.path.join(sim_directory, config_file)
 bathy_file_path = os.path.join(sim_directory, bathy_file)
 wave_file_path = os.path.join(sim_directory, wave_file)
+sea_level_file_path = os.path.join(sim_directory, sea_level_file)
 friction_file_path = os.path.join(sim_directory, friction_file)
 sat_image_file_path = os.path.join(sim_directory, sat_image_file)
 
@@ -85,6 +103,9 @@ new_params = {
 
 # Add new parameters only if they are not already present in the config
 for key, value in new_params.items():
+    config[key] = value
+
+for key, value in new_params_sensors.items():
     config[key] = value
 
 # Write the updated configuration back to the file
@@ -152,9 +173,21 @@ try:
     # Click the "Start Simulation" button
     start_button = driver.find_element(By.ID, "start-simulation-btn")
     start_button.click()
+
+    # Click the "Expand Sea Level" button if using sea level file
+    expand_sl_button = driver.find_element(By.ID, "buton_expand_sl")
+    expand_sl_button.click()
+
+    sl_input = driver.find_element(By.ID, "changeSeaLevel-input")
+    sl_input.clear()
+    sl_input.send_keys(f'{2.5:.2f}')
+
+    # Click the "Expand Sea Level" button if using sea level file
+    click_sl_button = driver.find_element(By.ID, "changeSeaLevel-button")
+    click_sl_button.click()
     
     # Poll for the existence of "completed.txt" every 10 seconds.
-    pause_time = 10  # seconds
+    pause_time = 0.1  # seconds
     print("Waiting for the completed.txt file to appear...")
     while not os.path.exists(completed_file):
         # 1) Find all files with name current_timeXXX.txt in the output_folder
@@ -162,7 +195,8 @@ try:
         file_list = glob.glob(pattern)
 
         if not file_list:
-            print("Simulation not yet started, or trigger_writeWaveHeight = 0.")
+            pass
+            # print("Simulation not yet started, or trigger_writeWaveHeight = 0.")
         else:
             # 2) Load only the newest file (based on modification time) and print its contents
             newest_file = max(file_list, key=os.path.getmtime)
@@ -177,10 +211,37 @@ try:
             estimated_time_to_finish = (trigger_writeWaveHeight_time - current_time) / realtime_ratio  
 
             print(f"Current simulation time {current_time:.2f} of {trigger_writeWaveHeight_time:.2f} seconds")
-            print(f"Realtime ratio: {realtime_ratio:.1f} Estimated time to finish: {(estimated_time_to_finish/60):.1f} minutes")
+            # print(f"Realtime ratio: {realtime_ratio:.1f} Estimated time to finish: {(estimated_time_to_finish/60):.1f} minutes")
 
             # Update previous_time to the current time
             previous_time = current_time
+
+            # Leer sea level file if it exists
+            if use_sl_file == 1:
+                if os.path.exists(sea_level_file_path):
+                    with open(sea_level_file_path, 'r') as f:
+                        sea_level_data = np.array([v.strip().split(' ') for v in f.readlines()]).astype(float)
+                else:
+                    print("Sea level file not found.")
+
+                # simulated_time = round(current_time / 60. * 10) / 10
+
+                # Buscar el índice del valor más cercano
+                time_sl = sea_level_data[:, 0] - current_time
+                idx = [i for i, v in enumerate(time_sl) if v > 0]
+                idx = -1 if len(idx) == 0 else idx[0] - 1
+
+                # Obtener el valor correspondiente
+                sea_level = sea_level_data[idx, 1]
+                print(f"Current sea level: {sea_level}")
+
+                sl_input = driver.find_element(By.ID, "changeSeaLevel-input")
+                sl_input.clear()
+                sl_input.send_keys(f'{sea_level:.2f}')
+
+                # Click the "Expand Sea Level" button if using sea level file
+                click_sl_button = driver.find_element(By.ID, "changeSeaLevel-button")
+                click_sl_button.click()
 
             # 3) Delete all the found files
             for file in file_list:

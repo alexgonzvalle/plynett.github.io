@@ -1,11 +1,13 @@
 clf;
 clear all;
 
+path_run = 'D:\Development\repos\plynett.github.io\automation\output';
+
 % Load basic parameters
-dx = load('dx.txt');
-dy = load('dy.txt');
-nx = load('nx.txt');
-ny = load('ny.txt');
+dx = load(fullfile(path_run, 'dx.txt'));
+dy = load(fullfile(path_run, 'dy.txt'));
+nx = load(fullfile(path_run, 'nx.txt'));
+ny = load(fullfile(path_run, 'ny.txt'));
 
 x = [0:1:nx-1] * dx;
 y = [0:1:ny-1]' * dy;
@@ -14,36 +16,36 @@ y = [0:1:ny-1]' * dy;
 nt = 496;  % need to change manually
 
 % load bathy/topo [m]
-fid = fopen('bathytopo.bin', 'r');
+fid = fopen(fullfile(path_run, 'bathytopo.bin'), 'r');
 bathytopo = fread(fid, [nx, ny], 'float32');
 fclose(fid);
 
 time = zeros(nt,1);
 
 for n = 1:nt
-    time_fname = ['time_' num2str(n) '.txt'];
+    time_fname = [fullfile(path_run, ['time_' num2str(n) '.txt'])];
     time(n) = load(time_fname);  % [sec]
 
     % free surface elevation [m]
-    eta_fname = ['elev_' num2str(n) '.bin']; % Note: Changed from .txt to .bin
+    eta_fname = [fullfile(path_run, ['elev_' num2str(n) '.bin'])]; % Note: Changed from .txt to .bin
     fid = fopen(eta_fname, 'r');
     eta = fread(fid, [nx, ny], 'float32');
     fclose(fid);
 
 %     % x direction flux [m^2/s]
-%     P_fname = ['xflux_' num2str(n) '.bin']; % Note: Changed from .txt to .bin
+%     P_fname = [fullfile(path_run, ['xflux_' num2str(n) '.bin'])]; % Note: Changed from .txt to .bin
 %     fid = fopen(P_fname, 'r');
 %     P = fread(fid, [nx, ny], 'float32');
 %     fclose(fid);
 
 %     % y direction flux [m^2/s]
-%     Q_fname = ['yflux_' num2str(n) '.bin']; % Note: Changed from .txt to .bin
+%     Q_fname = [fullfile(path_run, ['yflux_' num2str(n) '.bin'])]; % Note: Changed from .txt to .bin
 %     fid = fopen(Q_fname, 'r');
 %     Q = fread(fid, [nx, ny], 'float32');
 %     fclose(fid);
 
 %     % turbulent eddy viscosity from breaking [m/s^2]
-%     nu_fname = ['turb_' num2str(n) '.bin']; % Note: Changed from .txt to .bin
+%     nu_fname = [fullfile(path_run, ['turb_' num2str(n) '.bin'])]; % Note: Changed from .txt to .bin
 %     fid = fopen(nu_fname, 'r');
 %     nu = fread(fid, [nx, ny], 'float32');
 %     fclose(fid);
